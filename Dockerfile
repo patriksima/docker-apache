@@ -12,6 +12,7 @@ RUN apt-get update && \
     apt-utils \
     libxml2-dev \
     libcurl4-openssl-dev \
+    zlib1g-dev \
     git \
     curl \
     vim \
