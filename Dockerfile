@@ -8,30 +8,45 @@ MAINTAINER Patrik Šíma <patrik@wrongware.cz>
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
+    apt-utils \
     libxml2-dev \
     libcurl4-openssl-dev \
     git \
     curl \
     vim \
-    unzip \
-    nodejs \
-    npm \
-    ruby \
-    ruby-dev
+    unzip
 
 #####################################
-# NPM update
+# NPM
 #####################################
-RUN npm install -y -g npm
-RUN ln -s "$(which nodejs)" /usr/bin/node
+ARG INSTALL_NPM=true
+ENV INSTALL_NPM ${INSTALL_NPM}
+RUN if [ ${INSTALL_NPM} = true ]; then \
+    apt-get install -y npm nodejs && \
+    npm install -y -g npm && \
+    ln -s "$(which nodejs)" /usr/bin/node \
+;fi
 
 #####################################
-# Gulp, compass
+# Gulp (depends on NPM)
 #####################################
-RUN npm install -y --global gulp-cli
-RUN gem update --system && \
-    gem install compass
+ARG INSTALL_GULP=true
+ENV INSTALL_GULP ${INSTALL_GULP}
+RUN if [ ${INSTALL_GULP} = true ]; then \
+    npm install -y --global gulp-cli \
+;fi
+
+#####################################
+# Compass
+#####################################
+ARG INSTALL_COMPASS=true
+ENV INSTALL_COMPASS ${INSTALL_COMPASS}
+RUN if [ ${INSTALL_COMPASS} = true ]; then \
+    apt-get install -y ruby ruby-dev && \
+    gem update --system && \
+    gem install compass \
+;fi
 
 #####################################
 # PHP
@@ -49,32 +64,33 @@ ADD server.pem /etc/ssl/certs/
 
 ADD 000-default.conf /etc/apache2/sites-available/
 ADD default-ssl.conf /etc/apache2/sites-available/
-# ADD adminer /usr/share/adminer
-# ADD conf/adminer.conf /etc/apache2/conf-available/adminer.conf
-# ADD conf/001-wrongware.conf /etc/apache2/sites-available/001-wrongware.conf
-# ADD conf/apache2.conf /etc/apache2/apache2.conf
-# ADD conf/php.ini /usr/local/etc/php/php.ini
 
 RUN a2enmod access_compat alias auth_basic authn_core authn_file authz_core authz_host authz_user autoindex deflate dir env filter headers mime negotiation php7 rewrite setenvif status ssl
-# RUN a2enconf adminer.conf
-# RUN a2dissite 000-default
 RUN a2ensite 000-default.conf
 RUN a2ensite default-ssl.conf
 
 #####################################
 # Composer
 #####################################
-RUN curl -sS https://getcomposer.org/installer | php \
-    && mv composer.phar /usr/bin/composer
-RUN composer self-update
+ARG INSTALL_COMPOSER=true
+ENV INSTALL_COMPOSER ${INSTALL_COMPOSER}
+RUN if [ ${INSTALL_COMPOSER} = true ]; then \
+    curl -sS https://getcomposer.org/installer | php && \
+    mv composer.phar /usr/bin/composer && \
+    composer self-update \
+;fi
 
 #####################################
 # WP-CLI
 #####################################
-RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
+ARG INSTALL_WPCLI=true
+ENV INSTALL_WPCLI ${INSTALL_WPCLI}
+RUN if [ ${INSTALL_WPCLI} = true ]; then \
+    curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
     chmod +x wp-cli.phar && \
-    mv wp-cli.phar /usr/local/bin/wp
-RUN wp cli update --yes --allow-root
+    mv wp-cli.phar /usr/local/bin/wp && \
+    wp cli update --yes --allow-root \
+;fi
 
 #####################################
 # Non-Root User
