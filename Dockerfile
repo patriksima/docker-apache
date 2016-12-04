@@ -105,9 +105,10 @@ RUN groupadd -g $PGID wrongware && \
 #####################################
 # Set Timezone
 #####################################
-ARG TZ=UTC
+ARG TZ=Europe/Prague
 ENV TZ ${TZ}
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN printf "[Date]\ndate.timezone=$TZ" > /usr/local/etc/php/conf.d/timezone.ini
 
 # Clean up
 USER root
